@@ -1,8 +1,17 @@
 # Marvel: Ultimate Alliance – Blender IGB Import/Export
 
-An experimental Blender add-on for importing and exporting `.igb` files from Raven Software's Marvel and X-Men games.
+A Blender add-on for importing and exporting `.igb` files from Raven Software's Marvel and X-Men games.
 
 Designed primarily for **Marvel: Ultimate Alliance (2006) on PC**, with additional import support for models and animations from other games.
+
+## Compatibility
+
+- **Blender version:** 4.5 LTS
+- **File format:** `.igb`
+- **Import:** Models and animations from supported Marvel, X-Men, and related games
+- **Export:** Marvel: Ultimate Alliance (2006) — PC only
+
+Developed for **Blender 4.5 LTS**. Compatibility with other Blender versions is not guaranteed.
 
 ## Features
 
