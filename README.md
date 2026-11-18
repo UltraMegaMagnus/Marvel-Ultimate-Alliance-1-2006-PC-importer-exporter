@@ -10,15 +10,14 @@ Designed primarily for **Marvel: Ultimate Alliance (2006) on PC**, with addition
 
 Supports importing models and animations from:
 
-- **X-Men Legends (2004)**
-- **X-Men Legends II: Rise of Apocalypse (2005)**, including PSP-exclusive content
-- **Marvel: Ultimate Alliance (2006)**
-- **Marvel: Ultimate Alliance 2**, including the Wii version
-- **Marvel Legends**
-- **Prototype**
+- **X-Men Legends (2004+¨Prototype)**, XBOX version
+- **X-Men Legends II: Rise of Apocalypse (2005)**, PC and PSP version
+- **Marvel Legends**, XBOX version
+- **Marvel: Ultimate Alliance (2006)** PC version
+- **Marvel: Ultimate Alliance 2**, Wii version
 
 **Import limitations:**
-- PlayStation 2 (PS2) files are not supported.
+- PlayStation 2 (PS2) files have not been tested.
 - Map/level importing is not supported.
 - Compatibility varies between games and individual IGB files.
 
@@ -28,15 +27,13 @@ Supports importing models and animations from:
 
 Export capabilities include:
 
-- Actors and character models
+- Actors models
 - General 3D models
 - Mannequins
 - Animations
-- Texture editing
 - Material editing
-- Other supported IGB data
 
-Exporting to other games or platforms is not supported.
+Exporting to other games or platforms is not supported, support might be planned in the future.
 
 ## AI Development Disclosure
 
