@@ -90,8 +90,10 @@ This is an unofficial community project.
 
 ## License
 
-Licensing is currently under review due to the use of upstream community code.
+This project is licensed under the **GNU General Public License v3.0 (GPL-3.0)**.
 
-The intended license is **GNU GPL v3.0 or later**, subject to the licensing and redistribution terms of the original projects.
+See the [LICENSE](LICENSE) file for full details.
 
-Third-party code remains subject to its respective licenses.
+This add-on is based on existing community projects and research. All original authors retain their respective rights, and third-party code remains subject to its original license terms.
+
+The add-on was entirely vibe-coded using OpenAI's ChatGPT (Astra Medium).
