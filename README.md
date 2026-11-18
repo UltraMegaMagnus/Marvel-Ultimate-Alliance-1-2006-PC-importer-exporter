@@ -35,8 +35,6 @@ Special thanks to everyone who has contributed to understanding and modding Marv
 
 ## Disclaimer
 
-This is an experimental, unofficial community project.
-
 - Import and export functionality may be incomplete or inaccurate.
 - Not all IGB files are guaranteed to work.
 - Back up original files before using the add-on.
