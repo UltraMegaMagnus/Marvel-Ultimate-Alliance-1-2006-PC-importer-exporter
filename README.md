@@ -10,14 +10,14 @@ Designed primarily for **Marvel: Ultimate Alliance (2006) on PC**, with addition
 
 Supports importing models and animations from:
 
-- **X-Men Legends (2004+¨Prototype)**, XBOX version
+- **X-Men Legends (2004+Prototype)**, Xbox version
 - **X-Men Legends II: Rise of Apocalypse (2005)**, PC and PSP version
-- **Marvel Legends**, XBOX version
+- **Marvel Legends**, Xbox version
 - **Marvel: Ultimate Alliance (2006)** PC version
 - **Marvel: Ultimate Alliance 2**, Wii version
 
 **Import limitations:**
-- PlayStation 2 (PS2) files have not been tested.
+- PlayStation 2 and Gamecubbe files have not been tested.
 - Map/level importing is not supported.
 - Compatibility varies between games and individual IGB files.
 
@@ -90,10 +90,6 @@ This is an unofficial community project.
 
 ## License
 
-This project is licensed under the **GNU General Public License v3.0 (GPL-3.0)**.
+Licensed under the **GNU General Public License v3.0 (GPL-3.0)**. See [LICENSE](LICENSE).
 
-See the [LICENSE](LICENSE) file for full details.
-
-This add-on is based on existing community projects and research. All original authors retain their respective rights, and third-party code remains subject to its original license terms.
-
-The add-on was entirely vibe-coded using OpenAI's ChatGPT (Astra Medium).
+This add-on was entirely vibe-coded using OpenAI's ChatGPT (Astra Medium) and builds upon existing community code and research. Credits to the original contributors are provided above.
