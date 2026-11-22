@@ -1,0 +1,214 @@
+{
+"roles": {
+"igNodeList|4": [
+1,
+-1,
+1
+],
+"igPropertyList|4": [
+1,
+-1,
+1
+],
+"igInfoList|4": [
+1,
+-1,
+1
+],
+"igTextureList|4": [
+1,
+-1,
+1
+],
+"igAttrList|4": [
+1,
+-1,
+1
+],
+"igAnimationCombiner|7": [
+40,
+-1,
+1
+],
+"igAnimationCombiner|8": [
+45,
+-1,
+1
+],
+"igAnimationCombiner|12": [
+45,
+-1,
+1
+],
+"igAnimationCombiner|13": [
+45,
+-1,
+1
+],
+"igActor|9": [
+45,
+-1,
+1
+],
+"igActor|10": [
+45,
+-1,
+1
+],
+"igAnimationCombinerBoneInfoList|4": [
+1,
+-1,
+1
+],
+"igIntList|4": [
+4,
+-1,
+1
+],
+"igAnimationBinding|3": [
+4,
+-1,
+1
+],
+"igActorList|4": [
+1,
+-1,
+1
+],
+"igAnimationCombinerList|4": [
+1,
+-1,
+1
+],
+"igAppearanceList|4": [
+1,
+-1,
+1
+],
+"igAnimationBindingList|4": [
+1,
+-1,
+1
+],
+"igAnimationTrackList|4": [
+1,
+-1,
+1
+],
+"igAnimationStateList|4": [
+1,
+-1,
+1
+],
+"igAnimationCombinerBoneInfoListList|4": [
+1,
+-1,
+1
+],
+"igSkeleton|3": [
+38,
+-1,
+1
+],
+"igSkeleton|5": [
+45,
+-1,
+1
+],
+"igSkeletonBoneInfoList|4": [
+1,
+-1,
+1
+],
+"igSkeletonList|4": [
+1,
+-1,
+1
+],
+"igAnimationList|4": [
+1,
+-1,
+1
+],
+"igSkinList|4": [
+1,
+-1,
+1
+],
+"igImage|13": [
+0,
+1,
+1
+],
+"igObjectList|4": [
+1,
+-1,
+1
+],
+"igVec3fList|4": [
+38,
+-1,
+1
+],
+"igVec2fList|4": [
+39,
+-1,
+1
+],
+"igFloatList|4": [
+14,
+-1,
+1
+],
+"igUnsignedCharList|4": [
+0,
+3,
+1
+],
+"igShaderConstantDataList|4": [
+1,
+-1,
+1
+],
+"igVec4ucList|4": [
+42,
+-1,
+1
+],
+"igImageMipMapList|4": [
+1,
+-1,
+1
+],
+"igIndexArray|2": [
+0,
+-1,
+1
+],
+"igPrimLengthArray1_1|2": [
+8,
+-1,
+1
+],
+"igBitMask|4": [
+7,
+4,
+1
+],
+"igQuaternionfList|4": [
+40,
+-1,
+1
+],
+"igLongList|4": [
+15,
+-1,
+1
+],
+"igEnbayaAnimationSource|2": [
+2,
+-1,
+1
+]
+}
+}

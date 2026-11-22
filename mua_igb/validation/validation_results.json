@@ -1,0 +1,77 @@
+[
+  {
+    "file": "skin psp.igb",
+    "triangles": 2242,
+    "segments": 6,
+    "status": "PASS",
+    "warnings": []
+  },
+  {
+    "file": "skin vanilla with env.igb",
+    "triangles": 4258,
+    "segments": 0,
+    "status": "PASS",
+    "warnings": []
+  },
+  {
+    "file": "max2012 export with skinsegment.igb",
+    "triangles": 61356,
+    "segments": 6,
+    "status": "PASS",
+    "warnings": []
+  },
+  {
+    "file": "Max2012 export with almost all texture type and gen global color attribute.igb",
+    "triangles": 32642,
+    "segments": 0,
+    "status": "PASS",
+    "warnings": []
+  },
+  {
+    "file": "skin xmen protype.igb",
+    "triangles": 3324,
+    "segments": 1,
+    "status": "PASS",
+    "warnings": []
+  },
+  {
+    "file": "XML2 skin with shimmer on wing attribute.IGB",
+    "triangles": 2248,
+    "segments": 2,
+    "status": "PASS",
+    "warnings": []
+  },
+  {
+    "file": "MUA2 skin wii.igb",
+    "triangles": 1910,
+    "segments": 0,
+    "status": "PASS",
+    "warnings": []
+  },
+  {
+    "file": "fx_d_handfountain.igb",
+    "triangles": 1734,
+    "segments": 0,
+    "status": "PASS",
+    "warnings": []
+  },
+  {
+    "file": "09_spiderman_4_combat.igb",
+    "status": "PASS",
+    "actions_exported": 34
+  },
+  {
+    "file": "attack_light1 spiderman.igb",
+    "status": "PASS",
+    "actions_exported": 1
+  },
+  {
+    "file": "150_cable psp anim.igb",
+    "status": "PASS",
+    "actions_exported": 13
+  },
+  {
+    "file": "option_toggles",
+    "status": "PASS"
+  }
+]

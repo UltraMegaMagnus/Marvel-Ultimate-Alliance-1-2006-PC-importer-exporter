@@ -1,0 +1,10 @@
+{
+  "status": "PASS",
+  "channels": [
+    "rotation",
+    "root translation",
+    "limb translation",
+    "nonuniform scale"
+  ],
+  "single_frame": true
+}

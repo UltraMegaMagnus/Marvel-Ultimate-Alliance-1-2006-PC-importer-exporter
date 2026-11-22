@@ -1,0 +1,8 @@
+{
+  "status": "PASS",
+  "blender": "4.5.3 LTS",
+  "failed_078_recovered": true,
+  "reinstall": true,
+  "reload": true,
+  "settings_preserved": true
+}

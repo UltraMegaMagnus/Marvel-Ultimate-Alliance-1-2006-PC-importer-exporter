@@ -1,0 +1,13 @@
+{
+  "status": "PASS",
+  "method": "Native DLL calls on sequence objects reconstructed from exported fields; executable Motion code inspected",
+  "root_samples_per_track": 31,
+  "max_translation_error": 1.9073486328125e-06,
+  "native_scale_matrix": [
+    1.2,
+    1,
+    0.8
+  ],
+  "whole_game_playtest": false,
+  "native_igb_loader_test": false
+}

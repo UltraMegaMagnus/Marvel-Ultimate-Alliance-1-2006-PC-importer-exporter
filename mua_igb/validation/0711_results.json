@@ -1,0 +1,23 @@
+[
+  {
+    "clip": "attack_light3 vanilla.igb",
+    "world_pose_error": 2.167709297395959e-06,
+    "height_errors": 4.263256414560601e-14,
+    "samples": 46
+  },
+  {
+    "clip": "idle.igb",
+    "world_pose_error": 1.9818666032733745e-06,
+    "height_errors": 2.842170943040401e-14,
+    "samples": 91
+  },
+  {
+    "clip": "anim custom max export.igb",
+    "world_pose_error": 1.2164979494855288e-06,
+    "height_errors": 2.842170943040401e-14,
+    "samples": 81
+  },
+  "PASS rotating/scaled root, multiple children, weighted-root fallback",
+  "PASS FX psylocke_blade_01.IGB both model modes, four playback modes, 12 Hz, valid bounds and duration",
+  "PASS FX fx_d_handfountain.igb both model modes, four playback modes, 12 Hz, valid bounds and duration"
+]

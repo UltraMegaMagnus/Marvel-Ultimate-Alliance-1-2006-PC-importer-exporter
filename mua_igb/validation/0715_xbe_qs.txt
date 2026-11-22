@@ -1,0 +1,119 @@
+Batman debug XBE: Xbox XBEH; Alchemy 2.5 source paths.
+Sections: [(69632, 3593024, 4096, 3593024), (3662656, 266140, 3600384, 266132), (3928800, 302060, 3866624, 275240), (4230880, 73820, 4145152, 73820), (4304704, 182148, 4222976, 178864), (4486880, 246516, 4403200, 245884), (4733408, 58336, 4653056, 58336), (4791744, 261480, 4714496, 261464), (5053248, 2008368, 4976640, 1782168), (7061632, 29056, 6762496, 29036)]
+QS time-range assertion VA 0x610538 references ['0x176529']
+
+Disassembly around assertion reference:
+0x1764c5 add byte ptr [eax], 0
+0x1764c8 mov edx, dword ptr [ebp - 8]
+0x1764cb mov word ptr [edx], cx
+0x1764ce mov eax, dword ptr [ebp - 0x40]
+0x1764d1 neg eax
+0x1764d3 mov ecx, dword ptr [ebp - 0x3c]
+0x1764d6 adc ecx, 0
+0x1764d9 neg ecx
+0x1764db mov dword ptr [ebp - 0x40], eax
+0x1764de mov dword ptr [ebp - 0x3c], ecx
+0x1764e1 mov eax, dword ptr [ebp - 0x40]
+0x1764e4 mov edx, dword ptr [ebp - 0x3c]
+0x1764e7 mov cl, 0x17
+0x1764e9 call 0x365060
+0x1764ee mov dword ptr [ebp - 0x40], eax
+0x1764f1 mov dword ptr [ebp - 0x3c], edx
+0x1764f4 mov eax, dword ptr [ebp - 0x40]
+0x1764f7 mov edx, dword ptr [ebp - 0x3c]
+0x1764fa mov cl, 0xe
+0x1764fc call 0x365060
+0x176501 mov dword ptr [ebp - 0xa0], eax
+0x176507 mov dword ptr [ebp - 0x9c], edx
+0x17650d mov edx, dword ptr [ebp - 0xa0]
+0x176513 or edx, dword ptr [ebp - 0x9c]
+0x176519 test edx, edx
+0x17651b je 0x17654e
+0x17651d movzx eax, byte ptr [0x6105a3]
+0x176524 test eax, eax
+0x176526 je 0x17654e
+0x176528 push 0x610538
+0x17652d call 0x2a33d0
+0x176532 add esp, 4
+0x176535 mov dword ptr [ebp - 0x44], eax
+0x176538 cmp dword ptr [ebp - 0x44], 1
+0x17653c jne 0x176541
+0x17653e int3 
+0x17653f jmp 0x17654e
+0x176541 cmp dword ptr [ebp - 0x44], 2
+0x176545 jne 0x17654e
+0x176547 mov byte ptr [0x6105a3], 0
+0x17654e mov cx, word ptr [ebp - 0x40]
+0x176552 mov word ptr [ebp - 0x38], cx
+0x176556 movzx edx, word ptr [ebp - 0x38]
+0x17655a mov eax, dword ptr [ebp - 8]
+0x17655d movzx ecx, word ptr [eax]
+0x176560 or ecx, edx
+0x176562 mov edx, dword ptr [ebp - 8]
+0x176565 mov word ptr [edx], cx
+0x176568 mov eax, dword ptr [ebp - 8]
+0x17656b add eax, 2
+0x17656e mov dword ptr [ebp - 8], eax
+0x176571 jmp 0x176479
+0x176576 mov esp, ebp
+0x176578 pop ebp
+0x176579 ret 4
+0x17657c int3 
+0x17657d int3 
+0x17657e int3 
+0x17657f int3 
+0x176580 push ebp
+0x176581 mov ebp, esp
+0x176583 mov eax, dword ptr [ebp + 0x20]
+0x176586 add eax, 1
+0x176589 push eax
+0x17658a mov ecx, dword ptr [ebp + 0x1c]
+0x17658d push ecx
+0x17658e mov edx, dword ptr [ebp + 0x18]
+0x176591 push edx
+0x176592 mov eax, dword ptr [ebp + 0x14]
+0x176595 push eax
+0x176596 mov ecx, dword ptr [ebp + 0x10]
+0x176599 push ecx
+0x17659a mov edx, dword ptr [ebp + 0xc]
+0x17659d push edx
+0x17659e mov ecx, dword ptr [ebp + 8]
+0x1765a1 call 0x1b62e0
+0x1765a6 mov eax, dword ptr [ebp + 8]
+0x1765a9 pop ebp
+0x1765aa ret 
+0x1765ab int3 
+0x1765ac int3 
+0x1765ad int3 
+0x1765ae int3 
+0x1765af int3 
+0x1765b0 push ebp
+0x1765b1 mov ebp, esp
+0x1765b3 push ecx
+0x1765b4 mov dword ptr [ebp - 4], ecx
+0x1765b7 mov eax, dword ptr [ebp - 4]
+0x1765ba add eax, 0x34
+0x1765bd mov esp, ebp
+0x1765bf pop ebp
+0x1765c0 ret 
+0x1765c1 int3 
+0x1765c2 int3 
+0x1765c3 int3 
+0x1765c4 int3 
+0x1765c5 int3 
+0x1765c6 int3 
+0x1765c7 int3 
+0x1765c8 int3 
+0x1765c9 int3 
+0x1765ca int3 
+0x1765cb int3 
+0x1765cc int3 
+0x1765cd int3 
+0x1765ce int3 
+0x1765cf int3 
+0x1765d0 push ebp
+0x1765d1 mov ebp, esp
+0x1765d3 push ecx
+0x1765d4 mov dword ptr [ebp - 4], ecx
+0x1765d7 mov eax, dword ptr [ebp - 4]
+0x1765da mov eax, dword ptr [eax + 0x2c]

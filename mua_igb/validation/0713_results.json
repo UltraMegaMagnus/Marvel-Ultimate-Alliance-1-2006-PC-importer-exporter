@@ -1,0 +1,17 @@
+[
+  {
+    "file": "bad skin with bad anim.igb",
+    "before_gap": 3.784421682357788,
+    "after_gap": 0.0,
+    "reexport_joint_drift": 5.510266451458357e-06,
+    "unchanged_blender_scene": true
+  },
+  {
+    "file": "Max2012 export with almost all texture type and gen global color attribute.igb",
+    "before_gap": 0.0,
+    "after_gap": 0.0,
+    "reexport_joint_drift": 5.762603979775349e-06,
+    "unchanged_blender_scene": true
+  },
+  "PASS arbitrary heights/parent rotations, channel-mask transitions, original vertices and child positions, weighted-pivot guard"
+]

@@ -1,0 +1,5 @@
+{
+  "status": "PASS",
+  "test": "Synthetic Raven fixture based on supplied XBE decoder; import onto supplied prototype skin and export MUA1 animation",
+  "original_prototype_animation_tested": false
+}

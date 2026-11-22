@@ -1,0 +1,11 @@
+{
+  "status": "PASS",
+  "shuriken_pose_checks": 9,
+  "shuriken_max_vertex_error_metres": 1.1956170889767813e-07,
+  "vanilla_tracks_checked": 34,
+  "scene_range": [
+    4,
+    13
+  ],
+  "forced_intervals": 1
+}

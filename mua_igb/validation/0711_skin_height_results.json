@@ -1,0 +1,11 @@
+{
+  "status": "PASS",
+  "heights": [
+    25.0,
+    41.819530487,
+    55.0,
+    70.0
+  ],
+  "clips": "unchanged light3 and idle heights",
+  "original_scene_unchanged": true
+}
