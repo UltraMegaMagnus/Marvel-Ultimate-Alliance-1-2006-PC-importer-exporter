@@ -81,6 +81,7 @@ Additional thanks to the following MarvelMods community members for their work, 
 
 - ak2yny
 - Bloodymares
+- MrKablamOFish
 - nikita484
 - Outsider
 - Teancum
