@@ -73,6 +73,7 @@ The original `igb-blender` project builds upon research and code from:
 - **IGB parser gist** — mateon1
 - **igBlender** — ak2yny (GPLv3)
 - **raven-formats** — nikita488 (MIT)
+- **Python Project**  
 
 ### MarvelMods Community
 
