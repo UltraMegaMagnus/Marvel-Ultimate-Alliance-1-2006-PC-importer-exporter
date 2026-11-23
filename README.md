@@ -73,7 +73,8 @@ The original `igb-blender` project builds upon research and code from:
 - **IGB parser gist** — mateon1
 - **igBlender** — ak2yny (GPLv3)
 - **raven-formats** — nikita488 (MIT)
-- **Python Project**  
+- **Python Project**
+- t**OpenAIt**
 
 ### MarvelMods Community
 
@@ -86,6 +87,7 @@ Additional thanks to the following MarvelMods community members for their work, 
 - Outsider
 - Teancum
 - UltraMegaMagnus
+- Cykal for testing
 
 Thanks to everyone who has contributed to understanding, documenting, and modding these games and their file formats.
 
