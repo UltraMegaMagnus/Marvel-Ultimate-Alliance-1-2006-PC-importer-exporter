@@ -1,0 +1,11 @@
+{
+  "status": "PASS",
+  "checks": [
+    "Wii fresh import, legacy empty-slot recovery, explicit clearing preserved",
+    "Six environment faces and ordinary unit-3 sphere textures populate Alchemy",
+    "Blended skinned model: 7 evaluated poses, live actor/animation graph, BOUNCE playback",
+    "Max custom animation: constant Bip01 remains unmasked/inactive, preventing preview-height override",
+    "Authored constant root offsets retained; legacy import offsets do not alter scene export"
+  ],
+  "max_blended_vertex_error_metres": 5.626395704894094e-06
+}

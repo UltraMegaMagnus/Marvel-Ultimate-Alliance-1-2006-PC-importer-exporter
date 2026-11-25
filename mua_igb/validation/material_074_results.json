@@ -1,0 +1,7 @@
+{
+  "status": "PASS",
+  "checks": [
+    "Duplicate material consolidation preserves polygon assignments",
+    "All texture controls create/remove assigned shader nodes without placeholders"
+  ]
+}

@@ -7,6 +7,7 @@ from .export_core import (Builder, rest_local, split_pieces, tangent_frame, buil
 
 def build(path, model, swap_rb=False):
     B = Builder(); B.swap_rb = swap_rb
+    B.generate_mipmaps = getattr(model, "generate_mipmaps", False)
     identity = tuple(np.eye(4).ravel())
     anim = model.animation
     times = np.rint(np.arange(anim.n) / anim.rate * 1e9).astype(np.int64)
@@ -31,7 +32,7 @@ def build(path, model, swap_rb=False):
     nodes=[joints[i] for i,b in enumerate(model.bones) if b.parent<0]
     images,cache=[],{}
     for mesh in model.meshes:
-        attrs=material_attrs(B,mesh.mat,cache,images) if getattr(mesh,'use_material',True) else []
+        attrs=material_attrs(B,mesh.mat,cache,images,skinned=True) if getattr(mesh,'use_material',True) else []
         vbs=B.obj('igVertexBlendStateAttr');B.set_kind(vbs,'Bool',1);attrs.append(vbs)
         if mesh.cull!='DEFAULT':
             cull=B.obj('igCullFaceAttr');B.set_kind(cull,'Bool',mesh.cull!='DISABLE')

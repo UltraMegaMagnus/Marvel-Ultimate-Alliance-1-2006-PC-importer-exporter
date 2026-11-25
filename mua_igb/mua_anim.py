@@ -24,6 +24,8 @@ class Track:
 class Anim:
     def __init__(self, name, duration):
         self.name, self.duration, self.tracks = name, duration, []
+        self.play_modes = {}
+        self.motion_fields = None
         self.motion_velocity, self.motion_offset = None, (0,0,0)
         self.rest_trans = {}    # bone name -> local rest translation of the skeleton the anim was made for
 
@@ -105,6 +107,8 @@ def load_animations(path, warnings=None, include_static=False):
             if tr is None:
                 continue
             bone = tr.get(2)
+            if bone == "Motion":
+                A.motion_fields = (tr.get(4), tr.get(5))
             if bone == "Motion" and tr.get(4, (0,0,0,0))[3] == -999:
                 A.motion_velocity = tr.get(4)
                 A.motion_offset = tr.get(5, (0,0,0))
@@ -123,6 +127,7 @@ def load_animations(path, warnings=None, include_static=False):
                 asrc = R(g, src, 3)
                 if asrc is None:
                     continue
+                A.play_modes[bone] = asrc.get(5)
                 if asrc.index not in cache:
                     try:
                         cache[asrc.index] = enbaya.decode(g.ref(asrc.first("MemoryRef")).data)
@@ -137,13 +142,15 @@ def load_animations(path, warnings=None, include_static=False):
                 if ti >= len(tracks):
                     continue
                 times, q, t = _clip_enbaya(tracks[ti], rate, sdur)
-                if not np.any(t):           # no translation channel in the stream
+                if not np.any(t) and R(g, an, 10) is None:
+                    # With a mask, zero can be an explicitly keyed origin.
                     t = None
                 A.tracks.append(Track(bone, times, q, t))
                 if dur == 0:
                     A.duration = max(A.duration, float(times[-1]))
                 A.duration = max(A.duration, float(times[-1])) if dur == 0 else A.duration
             elif src.type.startswith("igTransformSequence"):
+                A.play_modes[bone] = src.get(8)
                 tl = ref_of(g, src, "igLongList")
                 ql = ref_of(g, src, "igQuaternionfList")
                 vl = R(g, src, 2)

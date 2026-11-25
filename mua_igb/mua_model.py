@@ -91,6 +91,7 @@ def _read_skeleton(g, model, selected=None):
     # A mesh file may also carry a smaller attachment/default skeleton.
     actor_skeletons = [R(g,c,3) for c in g.by_type("igAnimationCombiner2")]
     sk = next((candidate for candidate in actor_skeletons if candidate in sk),sk[0])
+    model.native_skeleton_name = sk.get(2)
     if sk.type == "igSkeleton2":
         infos = g.obj_list(R(g,sk,3))
         inv = g.ref(sk.get(4,-1))
@@ -245,6 +246,7 @@ def _make_texture(g, bind, st):
     arr, info = _decode_image(g, im, st.cache, swap)
     t = Texture(unit, name, im.get(2), im.get(3), info, arr)
     t.key = im.index
+    t.cube_apply = ta.get(20, -1)
     t.sphere = sphere or ta.type == "igTextureCubeAttr"
     t.faces = None
     if t.sphere and isinstance(ta.fields.get(19), (bytes, bytearray)) and len(ta.fields[19]) >= 24:
@@ -274,6 +276,9 @@ class State:
         self.material, self.color = None, None
         self.blend, self.lighting, self.cull = None, None, None
         self.alpha_test, self.alpha_func, self.alpha_ref = False, 6, 0.5
+        self.stage_attrs = {}
+        self.global_color = self.vertex_blend = None
+        self.material_mode = None
         self.depth_write = None
         self.segment = None
         self.source_name = None
@@ -290,6 +295,9 @@ class State:
         s.material, s.color = self.material, self.color
         s.blend, s.lighting, s.cull = self.blend, self.lighting, self.cull
         s.alpha_test, s.alpha_func, s.alpha_ref = self.alpha_test, self.alpha_func, self.alpha_ref
+        s.stage_attrs = dict(self.stage_attrs)
+        s.global_color, s.vertex_blend = self.global_color, self.vertex_blend
+        s.material_mode = self.material_mode
         s.depth_write = self.depth_write
         s.segment = self.segment
         s.source_name = self.source_name
@@ -318,6 +326,16 @@ class State:
                 v = a.first("Vec4f")
                 if v is not None:
                     self.color = v
+            elif t == "igTextureCoordSourceAttr":
+                self.stage_attrs[(a.get(6), "coord")] = (a.get(4), a.get(5))
+            elif t == "igTextureFunctionAttr":
+                self.stage_attrs[(a.get(5), "function")] = tuple(a.get(i) for i in (4,6,7,8,9,10))
+            elif t == "igGlobalColorStateAttr":
+                self.global_color = bool(a.first("Bool"))
+            elif t == "igVertexBlendStateAttr":
+                self.vertex_blend = bool(a.first("Bool"))
+            elif t == "igMaterialModeAttr":
+                self.material_mode = a.first("Enum")
             elif t == "igDepthWriteStateAttr":
                 self.depth_write = bool(a.first("Bool",1))
             elif t == "igAlphaStateAttr":
@@ -648,6 +666,10 @@ def _finish_mesh(m, name, st, bmlist, rigid_bone, world, bm_to_bone, bone_by_nam
     m.name = name
     m.flags = getattr(m, "flags", 0)
     m.alpha_test, m.alpha_func, m.alpha_ref = st.alpha_test, st.alpha_func, st.alpha_ref
+    m.swap_stage_color = st.swap
+    m.stage_attrs = st.stage_attrs
+    m.global_color, m.vertex_blend = st.global_color, st.vertex_blend
+    m.material_mode = st.material_mode
     m.depth_write = st.depth_write
     m.segment = st.segment
     m.textures = st.textures()
@@ -665,7 +687,7 @@ def _finish_mesh(m, name, st, bmlist, rigid_bone, world, bm_to_bone, bone_by_nam
            tuple(m.color) if m.color is not None else None, m.blend, m.lighting, m.cull,
            repr(sorted((k, str(v)) for k, v in m.params.items())), m.blend_func,
            id(st.uv_xform["seq"]) if st.uv_xform and st.uv_xform.get("seq") is not None else None)
-    m.material_key = (sig, st.alpha_test, st.alpha_func, st.alpha_ref, tuple(sorted(st.texmat.items())), st.depth_write)
+    m.material_key = (sig, st.alpha_test, st.alpha_func, st.alpha_ref, tuple(sorted(st.texmat.items())), st.depth_write, st.material_mode, tuple(sorted(st.stage_attrs.items())), st.global_color, st.vertex_blend)
     return m
 
 
@@ -688,7 +710,7 @@ def _seq_data(g, seq):
     tr = np.array(g.data_list(vls[0], "3f"), np.float64).reshape(-1, 3) if vls else None
     sc = np.array(g.data_list(vls[1], "3f"), np.float64).reshape(-1, 3) if len(vls) > 1 else None
     n = min(n, len(q), len(tr) if tr is not None else n)
-    return {"times": times[:n], "quats": q[:n], "trans": tr[:n] if tr is not None else None,
+    return {"play_mode": seq.get(8), "times": times[:n], "quats": q[:n], "trans": tr[:n] if tr is not None else None,
             "scale": sc[:n] if sc is not None and len(sc) >= n else None}
 
 

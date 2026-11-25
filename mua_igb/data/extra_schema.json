@@ -1,4 +1,22 @@
 {
+  "igMaterialModeAttr": {
+    "parent": "igVisualAttribute",
+    "major": 1,
+    "minor": 0,
+    "sc": 5,
+    "fields": [
+      [
+        "Short",
+        2,
+        2
+      ],
+      [
+        "Enum",
+        4,
+        4
+      ]
+    ]
+  },
   "igSegment": {
     "parent": "igGroup",
     "major": 1,
@@ -177,6 +195,82 @@
         "Matrix44f",
         6,
         64
+      ]
+    ]
+  },
+  "igTextureCoordSourceAttr": {
+    "parent": "igVisualAttribute",
+    "major": 1,
+    "minor": 0,
+    "sc": 7,
+    "fields": [
+      [
+        "Short",
+        2,
+        2
+      ],
+      [
+        "Enum",
+        4,
+        4
+      ],
+      [
+        "Int",
+        5,
+        4
+      ],
+      [
+        "Int",
+        6,
+        4
+      ]
+    ]
+  },
+  "igTextureFunctionAttr": {
+    "parent": "igVisualAttribute",
+    "major": 1,
+    "minor": 0,
+    "sc": 11,
+    "fields": [
+      [
+        "Short",
+        2,
+        2
+      ],
+      [
+        "Enum",
+        4,
+        4
+      ],
+      [
+        "Int",
+        5,
+        4
+      ],
+      [
+        "Enum",
+        6,
+        4
+      ],
+      [
+        "Enum",
+        7,
+        4
+      ],
+      [
+        "Enum",
+        8,
+        4
+      ],
+      [
+        "UnsignedChar",
+        9,
+        1
+      ],
+      [
+        "Enum",
+        10,
+        4
       ]
     ]
   }

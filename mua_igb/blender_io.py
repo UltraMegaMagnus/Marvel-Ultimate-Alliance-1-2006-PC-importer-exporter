@@ -340,6 +340,30 @@ def sync_material(mat):
     if unlit and spec is not None:
         _rewire(nt, None, spec)
         spec.default_value = 0.0
+    # Principled exposes diffuse, specular and emission. Ambient stays engine-side.
+    mode = p.material_mode if p.material_mode_present else "0"
+    vertex = N.get("MUA Material Vertex Color")
+    if mode in ("2", "3", "4", "5"):
+        if vertex is None:
+            vertex = N.new("ShaderNodeVertexColor")
+            vertex.name = "MUA Material Vertex Color"
+            vertex.location = (-900, 850)
+        if mode in ("2", "3"):
+            _rewire(nt, vertex.outputs["Color"], dcol.inputs[2])
+        elif mode == "4" and spec is not None and not unlit:
+            _rewire(nt, vertex.outputs["Color"], spec)
+        elif mode == "5":
+            mod = N.get("Emission texture modulation")
+            if mod is not None:
+                _rewire(nt, vertex.outputs["Color"], mod.inputs[1])
+            else:
+                _rewire(nt, vertex.outputs["Color"], N["Emission sum"].inputs[2])
+    if mode not in ("2", "3") and vertex is not None:
+        for link in list(dcol.inputs[2].links):
+            if link.from_node == vertex:
+                nt.links.remove(link)
+    if mode not in ("2", "3", "4", "5") and vertex is not None:
+        N.remove(vertex)
     # blending
     bt = int(p.blend_type)
     alpha = _socket(bsdf, "Alpha")
@@ -351,6 +375,17 @@ def sync_material(mat):
         alpha_src = opm.outputs[0]
     else:
         alpha_src = dn.outputs["Alpha"]
+    stage_tex = texture("MUA Stage 1 Color", p.stage1_image, [], (-1100,-1200))
+    stage_alpha = N.get("MUA Stage Opacity")
+    if stage_tex is not None and p.stage1_image.get("mua_opacity_stage", False):
+        if stage_alpha is None:
+            stage_alpha = N.new("ShaderNodeMath")
+            stage_alpha.name, stage_alpha.operation = "MUA Stage Opacity", "MULTIPLY"
+        _rewire(nt, alpha_src, stage_alpha.inputs[0])
+        _rewire(nt, stage_tex.outputs["Color"], stage_alpha.inputs[1])
+        alpha_src = stage_alpha.outputs[0]
+    elif stage_alpha is not None:
+        N.remove(stage_alpha)
     if p.alpha_test:
         test = N.get("AlphaTest") or N.new("ShaderNodeMath")
         test.name = "AlphaTest"
@@ -531,6 +566,28 @@ def build_material(ctx, mesh, model_name):
     with sync_suspended():
         p.alpha_mode = "4" if mesh.alpha_func == 4 else "6"
         p.alpha_test, p.alpha_func, p.alpha_ref = mesh.alpha_test, str(mesh.alpha_func), mesh.alpha_ref
+        stages = {}
+        for (unit, kind), values in sorted(getattr(mesh, "stage_attrs", {}).items()):
+            if unit not in stages:
+                stages[unit] = p.texture_stages.add()
+                stages[unit].unit = unit
+            stage = stages[unit]
+            setattr(stage, kind, True)
+            if kind == "coord":
+                stage.coord_mode, stage.coord_index = values
+            else:
+                stage.mode, stage.arg0, stage.arg1, stage.stage_type, stage.call_state, stage.function_type = values
+        for key in ("global_color", "vertex_blend"):
+            value = getattr(mesh, key, None)
+            setattr(p, key + "_present", value is not None)
+            if value is not None:
+                setattr(p, key + "_enabled", value)
+        mode = getattr(mesh, "material_mode", None)
+        p.material_mode_present = mode is not None
+        if mode is not None:
+            p.material_mode = str(mode) if mode in range(6) else "CUSTOM"
+            if mode not in range(6):
+                p.material_mode_value = mode
         p.depth_write_present = getattr(mesh,"depth_write",None) is not None
         p.depth_write = "0" if getattr(mesh,"depth_write",None) is False else "1"
         states = getattr(mesh,"texture_matrix_states",{})
@@ -556,7 +613,15 @@ def build_material(ctx, mesh, model_name):
         if 0 in tex:
             p.diffuse_tex = get_image(ctx, tex[0], "color")
         if 1 in tex:
-            p.normal_tex = get_image(ctx, tex[1], "normal")
+            if 1 in stages and stages[1].function:
+                source = tex[1]
+                if getattr(mesh, "swap_stage_color", False):
+                    source = _Tex(source.rgba[..., [2,1,0,3]], source.name, (source.key, "swapped"))
+                p.stage1_image = get_image(ctx, source, "color")
+                if source.name.lower().endswith((".opc", ".opc.dds")):
+                    p.stage1_image["mua_opacity_stage"] = True
+            else:
+                p.normal_tex = get_image(ctx, tex[1], "normal")
         if 2 in tex:
             p.specular_tex = get_image(ctx, tex[2], "data")
         if 5 in tex:
@@ -565,8 +630,11 @@ def build_material(ctx, mesh, model_name):
             p.reflection_mask = get_image(ctx, tex[4], "data")
         cube = tex.get(3)
         if cube is not None:
+            p.cube_apply = getattr(cube, "cube_apply", -1)
             p.reflection_mode = "CUBE" if cube.faces else "SPHERE"
             if cube.faces:
+                if cube.rgba is not None:
+                    p.cube_fallback = get_image(ctx, cube, "color")
                 imgs = [get_image(ctx, _Tex(f[0], f[1], f[2]), "color") for f in cube.faces]
                 p.reflection_same = False
                 p.reflection_px, p.reflection_nx, p.reflection_py = imgs[0], imgs[1], imgs[2]
@@ -650,6 +718,8 @@ def build_armature(model, scale, name):
             eb[b.index].parent = eb[b.parent]
     bpy.ops.object.mode_set(mode="OBJECT")
     obj[PROP_SCALE] = scale
+    from .native_import import remember
+    remember(obj, getattr(model, "native_skeleton_name", None))
     obj.show_in_front = True
     return obj
 
@@ -764,9 +834,12 @@ def material_signature(mat):
         return ("external", mat)
     values = [("emission_modulation",bool(mat.get("mua_modulate_emission",False)))]
     for prop in mat.mua.bl_rna.properties:
-        if prop.identifier == "rna_type" or prop.is_readonly:
+        if prop.identifier == "rna_type" or (prop.is_readonly and prop.type != "COLLECTION"):
             continue
         value = getattr(mat.mua, prop.identifier)
+        if prop.type == "COLLECTION":
+            value = tuple(tuple(getattr(item, field.identifier) for field in item.bl_rna.properties
+                                if field.identifier not in ("rna_type", "name")) for item in value)
         if getattr(prop, "is_array", False):
             value = tuple(value)
         values.append((prop.identifier, value))
@@ -910,10 +983,11 @@ def import_model(path, scale=0.0254, flip_green=False, dxt_mode="AUTO", save_tex
             bind_scale = np.linalg.norm(local, axis=0)
             sc = d.get("scale")
             sc = np.asarray(sc) / np.maximum(bind_scale, 1e-12) if sc is not None else None
+            anim.play_modes[bone] = d.get("play_mode")
             anim.tracks.append(Track(bone, d["times"], d["quats"], d["trans"], sc))
             anim.duration = max(anim.duration, float(d["times"][-1]))
         try:
-            _apply_anims(arm_obj, [anim], "ALL", False, False, False, False, scale, report)
+            _apply_anims(arm_obj, [anim], "ALL", False, False, False, False, scale, report, path)
             report("info: imported embedded animation (%d bone track(s), %.2fs)" % (len(anim.tracks), anim.duration))
         except Exception as e:
             report("note: embedded animation not imported (%s)" % e)
@@ -921,7 +995,7 @@ def import_model(path, scale=0.0254, flip_green=False, dxt_mode="AUTO", save_tex
         animations = [a for a in (_anims if _anims is not None else load_animations(path)) if a.tracks and (a.duration > 0 or _anims is not None)]
         if animations:
             arm_obj["mua_embedded_animation"] = True
-            actions = _apply_anims(arm_obj, animations, "ALL", False, False, False, False, scale, report)
+            actions = _apply_anims(arm_obj, animations, "ALL", False, False, False, False, scale, report, path)
             if _anims is not None:
                 arm_obj["mua_import_actions"] = [action.name for action in actions]
             report("info: imported embedded skinned animation (%d action(s))" % len(animations))
@@ -960,11 +1034,20 @@ def armature_rest(arm_obj):
     return rest
 
 
-def _apply_anims(arm_obj, anims, trans_mode, transfer_motion, fit_skeleton, scale_lengths, retarget, scale, report):
+def _apply_anims(arm_obj, anims, trans_mode, transfer_motion, fit_skeleton, scale_lengths, retarget, scale, report, source_path=None):
     """Write actions against actual rest orientations; fit mode preserves root/pelvis translation."""
     scene = bpy.context.scene
     fps = scene.render.fps / scene.render.fps_base
+    if trans_mode == "NONE":
+        fit_skeleton = False
     rest = armature_rest(arm_obj)
+    if fit_skeleton:
+        from .native_import import native_reason
+        reason = native_reason(arm_obj, anims, rest)
+        if reason:
+            report("info: native animation transforms retained: " + reason)
+            fit_skeleton = False
+            trans_mode = "ALL"
     D = {}
     fitted_rest = {}
     if fit_skeleton:
@@ -983,6 +1066,8 @@ def _apply_anims(arm_obj, anims, trans_mode, transfer_motion, fit_skeleton, scal
         else:
             rest_t[name] = head / scale
 
+    from . import animation_report
+    entries = []
     created, skipped = [], set()
     ad = arm_obj.animation_data_create()
     for an in anims:
@@ -1004,7 +1089,16 @@ def _apply_anims(arm_obj, anims, trans_mode, transfer_motion, fit_skeleton, scal
             else:
                 Jm = np.eye(3)
                 tm0 = np.asarray(an.rest_trans.get("Motion", np.zeros(3)), float) * r_bip
-            tracks["Bip01"] = P.transfer_motion(mt, tracks.get("Bip01"), Jm, tm0, rest["Bip01"][0], rest_t["Bip01"])
+            bip = tracks.get("Bip01")
+            scales = getattr(bip, "scales", None)
+            if trans_mode == "NONE" and bip is not None:
+                times = np.union1d(bip.times, mt.times)
+                rotations = P._resample(bip.times, bip.quats, times, True)
+                if scales is not None:
+                    scales = P._resample(bip.times, scales, times, False)
+                bip = type(bip)(bip.bone, times, rotations, None)
+            tracks["Bip01"] = P.transfer_motion(mt, bip, Jm, tm0, rest["Bip01"][0], rest_t["Bip01"])
+            tracks["Bip01"].scales = scales
             force_trans.add("Bip01")
         if not tracks:
             continue
@@ -1014,12 +1108,12 @@ def _apply_anims(arm_obj, anims, trans_mode, transfer_motion, fit_skeleton, scal
         action["mua_fitted_bind"] = bool(fit_skeleton)
         translation_offsets = {}
         motion_track = next((tr for tr in an.tracks if tr.bone == "Motion"), None)
-        if motion_track is not None and "Motion" not in rest and not transfer_motion:
+        if trans_mode != "NONE" and motion_track is not None and "Motion" not in rest and not transfer_motion:
             action["mua_unbound_motion"] = json.dumps(dict(times=motion_track.times.tolist(), quats=motion_track.quats.tolist(), trans=None if motion_track.trans is None else motion_track.trans.tolist()))
         rates = [1.0/float(np.median(np.diff(tr.times))) for tr in an.tracks if len(tr.times)>1 and np.all(np.diff(tr.times)>1e-6)]
         action["mua_source_start_frame"] = scene.frame_start
         action["mua_sample_rate"] = min(120, max(1, int(round(max(rates))))) if rates else int(round(fps))
-        if an.motion_velocity is not None:
+        if trans_mode != "NONE" and an.motion_velocity is not None:
             action["mua_motion_velocity"] = an.motion_velocity
             action["mua_motion_offset"] = an.motion_offset
         ad.action = action
@@ -1076,9 +1170,11 @@ def _apply_anims(arm_obj, anims, trans_mode, transfer_motion, fit_skeleton, scal
             action.frame_end = scene.frame_start + an.duration * fps
         except Exception:
             pass
+        entries.append(animation_report.describe(an, action, scene.frame_start, fps, rest))
         created.append(action)
     if not created:
         raise RuntimeError("no importable animation tracks")
+    animation_report.append(source_path or arm_obj.name, arm_obj.name, entries)
     ad.action = created[0]
     scene.frame_set(scene.frame_current, subframe=scene.frame_subframe)
     if skipped:
@@ -1096,7 +1192,7 @@ def import_animations(path, arm_obj, trans_mode="ROOT", transfer_motion=False, f
     for w in warns:
         report("warning: " + w)
     try:
-        return _apply_anims(arm_obj, anims, trans_mode, transfer_motion, fit_skeleton, False, False, scale, report)
+        return _apply_anims(arm_obj, anims, trans_mode, transfer_motion, fit_skeleton, False, False, scale, report, path)
     except RuntimeError as e:
         raise RuntimeError("%s%s" % (e, (" (" + warns[-1] + ")") if warns else ""))
 

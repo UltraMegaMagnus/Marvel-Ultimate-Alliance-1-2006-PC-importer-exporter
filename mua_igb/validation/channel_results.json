@@ -1,0 +1,8 @@
+{
+  "status": "PASS",
+  "checks": [
+    "Enbaya duration and endpoint preservation",
+    "Raw scale channel",
+    "Nonzero translation smaller than prior threshold"
+  ]
+}

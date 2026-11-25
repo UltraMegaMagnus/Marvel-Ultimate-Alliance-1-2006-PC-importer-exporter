@@ -1,0 +1,10 @@
+{
+  "status": "PASS",
+  "checks": [
+    "Six stored cubemap faces match supplied PNG content after per-face orientation conversion",
+    "Duplicate material consolidation preserves polygon assignments",
+    "Arbitrary rest axes and custom named roots round-trip without vanilla retargeting",
+    "RemovePos keeps custom hierarchy root/pelvis and strips custom child translation",
+    "All texture controls create/remove assigned shader nodes without placeholders"
+  ]
+}

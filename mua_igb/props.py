@@ -2,7 +2,7 @@
 import bpy
 from bpy_extras.io_utils import ImportHelper
 from bpy.props import (BoolProperty, EnumProperty, FloatProperty, FloatVectorProperty, IntProperty,
-                       PointerProperty, StringProperty)
+                       CollectionProperty, PointerProperty, StringProperty)
 
 from . import blender_io
 
@@ -62,6 +62,41 @@ def _set_opacity(self, value):
     self.diffuse = d
 
 
+class MUATextureStage(bpy.types.PropertyGroup):
+    unit: IntProperty(name="Texture unit", min=0, max=32767)
+    coord: BoolProperty(name="igTextureCoordSourceAttr")
+    coord_mode: IntProperty(name="Coordinate mode")
+    coord_index: IntProperty(name="UV coordinate index")
+    function: BoolProperty(name="igTextureFunctionAttr")
+    mode: IntProperty(name="Function mode", default=12)
+    arg0: IntProperty(name="Argument 0", default=3)
+    arg1: IntProperty(name="Argument 1")
+    stage_type: IntProperty(name="Stage type", default=2)
+    call_state: IntProperty(name="Call state", min=0, max=255)
+    function_type: IntProperty(name="Function type", default=2)
+
+
+class MUA_OT_texture_stage(bpy.types.Operator):
+    bl_idname = "mua.texture_stage"
+    bl_label = "Edit texture stages"
+    bl_options = {"UNDO", "INTERNAL"}
+    material: StringProperty()
+    remove_index: IntProperty(default=-1)
+
+    def execute(self, context):
+        mat = bpy.data.materials.get(self.material)
+        if mat is None:
+            return {"CANCELLED"}
+        stages = mat.mua.texture_stages
+        if self.remove_index < 0:
+            used = {s.unit for s in stages}
+            stage = stages.add()
+            stage.unit = next(i for i in range(len(used) + 1) if i not in used)
+        elif self.remove_index < len(stages):
+            stages.remove(self.remove_index)
+        return {"FINISHED"}
+
+
 class MUAShader(bpy.types.PropertyGroup):
     active: BoolProperty(name="Alchemy material", default=False,
                          description="This material follows the MarvelStandart shader layout")
@@ -69,14 +104,43 @@ class MUAShader(bpy.types.PropertyGroup):
     blend_type: EnumProperty(name="Blend", items=BLEND_ITEMS, default="0", update=_mat_update)
     alpha_test: BoolProperty(name="Alpha", description="Enable igAlphaStateAttr; new materials use function 6 and reference 0.5", default=False, update=_mat_update)
     alpha_mode: EnumProperty(name="Alpha type", items=[("6","Alpha 6","Reference 0.5"),("4","Alpha 4","Reference 0.0")], default="6", update=_alpha_mode_update)
+    texture_stages: CollectionProperty(type=MUATextureStage)
+    stage1_image: _img("Unit 1 color texture", "Second fixed-function color texture")
+    # Retain the saved presence/value pair to round-trip omitted and explicit Off states.
+    def _set_global_color(self, value):
+        self.global_color_present = True
+        self.global_color_enabled = value
+
+    def _set_vertex_blend(self, value):
+        self.vertex_blend_present = True
+        self.vertex_blend_enabled = value
+
+    global_color: BoolProperty(name="Global Color State", default=True,
+        description="Allow the game to tint this material for effects such as status changes. Turn off to export an explicit disabled state",
+        get=lambda self: self.global_color_present and self.global_color_enabled, set=_set_global_color)
+    vertex_blend: BoolProperty(name="Vertex Blend State", default=False,
+        description="Use bone weights to deform this material's vertices. An untouched skin uses automatic skinning. Turning this on and then off explicitly disables blending",
+        get=lambda self: self.vertex_blend_present and self.vertex_blend_enabled, set=_set_vertex_blend)
+    global_color_present: BoolProperty(default=True, options={"HIDDEN"})
+    global_color_enabled: BoolProperty(name="Enabled", default=True)
+    vertex_blend_present: BoolProperty(default=False, options={"HIDDEN"})
+    vertex_blend_enabled: BoolProperty(name="Enabled", default=True)
+    cube_apply: IntProperty(name="Cube apply mode", default=-1, min=-1,
+        description="Native igTextureCubeAttr apply type (-1 selects the exporter default)")
+    material_mode_present: BoolProperty(name="Material Mode", default=False, update=_mat_update,
+        description="Write igMaterialModeAttr to select which material component receives vertex color")
+    material_mode: EnumProperty(name="Color component", default="3", update=_mat_update,
+        items=[(str(i), label, "") for i, label in enumerate(("None", "Ambient", "Diffuse", "Ambient and Diffuse", "Specular", "Emissive"))] +
+              [("CUSTOM", "Custom value", "Preserve an unrecognized component number")])
+    material_mode_value: IntProperty(name="Component number")
     depth_write_present: BoolProperty(name="DepthWriteStateAttr", default=False, description="Include an explicit depth-write attribute; choose On or Off below. Unchecked omits the attribute")
     depth_write: EnumProperty(name="Depth write", items=[("1","On","Write depth"),("0","Off","Do not write depth")], default="1")
     alpha_func: EnumProperty(name="Alpha function", items=[(str(i), n, "") for i,n in enumerate(("Never", "Less", "Equal", "Less or equal", "Greater", "Not equal", "Greater or equal", "Always"))], default="6", update=_mat_update)
     alpha_ref: FloatProperty(name="Alpha threshold", default=0.5, min=0, max=1, update=_mat_update)
-    texture_matrix: BoolProperty(name="TextureMatrixState", default=True, update=_texture_matrix_update,
+    texture_matrix: BoolProperty(name="TextureMatrixState", default=False, update=_texture_matrix_update,
                                  description="Enable texture-coordinate transforms; disabling preserves the UV animation for later reuse")
     texture_matrix_present: BoolProperty(default=False, options={'HIDDEN'})
-    shader_parameters: BoolProperty(name="ShaderParameters", default=True, update=_mat_update,
+    shader_parameters: BoolProperty(name="ShaderParameters", default=False, update=_mat_update,
                                    description="Export material.reflectance and material.transparent shader constants")
     lighting: BoolProperty(name="Enable Lighting", default=True, update=_mat_update)
     shininess: FloatProperty(name="Shininess", default=0.0, min=0.0, soft_max=128.0, update=_mat_update)
@@ -100,6 +164,7 @@ class MUAShader(bpy.types.PropertyGroup):
     reflection_ny: _img("-Y")
     reflection_pz: _img("+Z")
     reflection_nz: _img("-Z")
+    cube_fallback: _img("Cube sphere fallback", "Optional sphere image stored alongside the six directional faces")
     reflection_mask: _img("Reflection Mask Texture")
     reflectance: FloatVectorProperty(name="Reflectance", size=4, default=(1.0, 0.0, 0.0, 0.0), update=_mat_update,
                                      description="x: amount of reflection (y, z, w unused by MarvelStandart)")
@@ -252,6 +317,12 @@ class MUA_PT_shader(_Base, bpy.types.Panel):
         if p.alpha_test:
             box.prop(p, "alpha_mode", expand=True)
             box.label(text="Stored function %s; reference %.3g" % (p.alpha_func, p.alpha_ref))
+        box.prop(p, "global_color")
+        box.prop(p, "material_mode_present")
+        if p.material_mode_present:
+            box.prop(p, "material_mode")
+            if p.material_mode == "CUSTOM":
+                box.prop(p, "material_mode_value")
         box.prop(p, "depth_write_present")
         if p.depth_write_present:
             box.prop(p, "depth_write", expand=True)
@@ -266,8 +337,28 @@ class MUA_PT_shader(_Base, bpy.types.Panel):
         for name in ("diffuse_tex", "normal_tex", "specular_tex", "emissive_tex"):
             image_slot(box, p, name, mat)
         box = lay.box()
-        box.label(text="Environment Map")
+        box.label(text="Texture Stages")
+        for i, stage in enumerate(p.texture_stages):
+            row = box.row()
+            row.prop(stage, "unit")
+            op = row.operator("mua.texture_stage", text="", icon="X")
+            op.material, op.remove_index = mat.name, i
+            box.prop(stage, "coord")
+            if stage.coord:
+                box.prop(stage, "coord_mode")
+                box.prop(stage, "coord_index")
+            box.prop(stage, "function")
+            if stage.function:
+                for key in ("mode","arg0","arg1","stage_type","call_state","function_type"):
+                    box.prop(stage, key)
+        box.operator("mua.texture_stage", text="Add texture stage").material = mat.name
+        if p.stage1_image or any(s.unit == 1 for s in p.texture_stages):
+            image_slot(box, p, "stage1_image", mat)
+        box = lay.box()
+        box.label(text="Environment Map (igTextureCubeAttr)")
         box.prop(p, "reflection_mode")
+        if any(blender_io.reflection_images(p)):
+            box.prop(p, "cube_apply")
         if p.reflection_mode == "CUBE":
             box.prop(p, "reflection_same")
         if p.reflection_mode == "SPHERE" or p.reflection_same:
@@ -276,6 +367,8 @@ class MUA_PT_shader(_Base, bpy.types.Panel):
             col = box.column(align=True)
             for name in ("reflection_px", "reflection_nx", "reflection_py", "reflection_ny", "reflection_pz", "reflection_nz"):
                 image_slot(col, p, name, mat)
+        if p.reflection_mode == "CUBE" and any(blender_io.reflection_images(p)):
+            image_slot(box, p, "cube_fallback", mat)
         image_slot(box, p, "reflection_mask", mat)
         box = lay.box()
         box.prop(p, "shader_parameters")
@@ -300,6 +393,8 @@ class MUA_OT_make_material(bpy.types.Operator):
             diffuse = next((n.image for n in mat.node_tree.nodes if n.type == "TEX_IMAGE" and n.image
                             and not n.image.name.startswith("MUA_placeholder")), None)
         with blender_io.sync_suspended():
+            if not mat.mua.active:
+                mat.mua.global_color = True
             mat.mua.active = True
             if diffuse is not None:
                 mat.mua.diffuse_tex = diffuse
@@ -333,7 +428,7 @@ class MUA_OT_open_texture(bpy.types.Operator, ImportHelper):
     slot: StringProperty()
     def execute(self, context):
         mat = bpy.data.materials.get(self.material)
-        if mat is None or self.slot not in {"diffuse_tex", "normal_tex", "specular_tex", "emissive_tex", "reflection_all", "reflection_px", "reflection_nx", "reflection_py", "reflection_ny", "reflection_pz", "reflection_nz", "reflection_mask"}:
+        if mat is None or self.slot not in {"cube_fallback", "stage1_image", "diffuse_tex", "normal_tex", "specular_tex", "emissive_tex", "reflection_all", "reflection_px", "reflection_nx", "reflection_py", "reflection_ny", "reflection_pz", "reflection_nz", "reflection_mask"}:
             return {"CANCELLED"}
         img = bpy.data.images.load(self.filepath, check_existing=False)
         if self.slot in {"normal_tex", "specular_tex", "reflection_mask"}:
@@ -343,7 +438,7 @@ class MUA_OT_open_texture(bpy.types.Operator, ImportHelper):
         return {"FINISHED"}
 
 
-CLASSES = (MUAShader, MUAObject, MUATools, MUA_PT_object, MUA_PT_shader, MUA_OT_make_material, MUA_OT_refresh_material, MUA_OT_open_texture)
+CLASSES = (MUATextureStage, MUA_OT_texture_stage, MUAShader, MUAObject, MUATools, MUA_PT_object, MUA_PT_shader, MUA_OT_make_material, MUA_OT_refresh_material, MUA_OT_open_texture)
 
 
 @bpy.app.handlers.persistent

@@ -228,6 +228,7 @@ def uv_transform_node(B, mat, child):
         4: B.numlist('igVec3fList', np.ones((n,3)), '<f4'),
         8: int(ua.get("type", 0)), 11: B.numlist("igLongList", ticks, "<i8"),
         15: 11, 16:bytes((1,3,1)), 18: int(ticks[-1])})
+    B.uv_duration = max(getattr(B, "uv_duration", 0), int(ticks[-1]))
     # Texture transforms do not move geometry. Keep their descendant bounds.
     bound = subtree_bound(B, child)
     return B.obj("igTransform", {2: "", 3: bound, 5:2, 7: B.objlist("igNodeList", [child]),
@@ -251,11 +252,7 @@ def subtree_bound(B, node):
 
 
 # ------------------------------------------------------------------- shader pieces
-def make_image(B, tex, cache, pfmt=None):
-    key = id(tex)
-    if key in cache:
-        return cache[key]
-    rgba = tex.rgba
+def _image_level(B, tex, rgba, name):
     h, w = rgba.shape[:2]
     swap = bool(getattr(B, "swap_rb", False)) and not tex.no_swap
     if tex.kind == "rgba8":
@@ -266,19 +263,75 @@ def make_image(B, tex, cache, pfmt=None):
         data = dxt.encode(rgba, tex.kind, swap_rb=swap)
         pf = 14 if tex.kind == "dxt1" else 16
         sub = 1 if tex.kind == "dxt1" else 2
-        bpr = (w // 4) * (8 if tex.kind == "dxt1" else 16)
+        bpr = ((w + 3) // 4) * (8 if tex.kind == "dxt1" else 16)
     mem = B.mem("igImage", 13, data)
-    img = B.obj("igImage", {2: w, 3: h, 7: sub, 8: sub, 9: sub, 10: sub, 11: pf, 12: len(data), 13: mem,
-                            14: None, 19: bpr, 22: tex.name})
-    mips = B.objlist("igImageMipMapList", [])
-    ta = B.obj("igTextureAttr", {12: img, 16: mips})
-    cache[key] = (img, ta)
-    return cache[key]
+    return B.obj("igImage", {2: w, 3: h, 7: sub, 8: sub, 9: sub, 10: sub, 11: pf, 12: len(data), 13: mem,
+                            14: None, 19: bpr, 22: name})
 
 
-def material_attrs(B, mat, cache, images):
+def _halve_pixels(rgba, normal):
+    # Area-weighted box reduction also includes the last row/column of odd sizes.
+    data = rgba
+    if normal:
+        xy = rgba[..., [3, 1]] * 2 - 1
+        z = np.sqrt(np.maximum(0, 1 - (xy * xy).sum(axis=2)))
+        data = np.dstack((xy, z))
+    for axis in (0, 1):
+        size = data.shape[axis]
+        if size == 1:
+            continue
+        moved = np.moveaxis(data, axis, 0)
+        if size % 2 == 0:
+            moved = (moved[::2] + moved[1::2]) * 0.5
+        else:
+            edges = np.linspace(0, size, size // 2 + 1)
+            rows = []
+            for lo, hi in zip(edges, edges[1:]):
+                ids = np.arange(int(lo), int(np.ceil(hi)))
+                weights = np.minimum(hi, ids + 1) - np.maximum(lo, ids)
+                rows.append(np.tensordot(weights / (hi - lo), moved[ids], axes=1))
+            moved = np.asarray(rows, dtype=np.float32)
+        data = np.moveaxis(moved, 0, axis)
+    if normal:
+        data /= np.maximum(np.linalg.norm(data, axis=2, keepdims=True), 1e-10)
+        packed = np.zeros((*data.shape[:2], 4), dtype=np.float32)
+        packed[..., [3, 1]] = data[..., :2] * 0.5 + 0.5
+        return packed
+    return data
+
+
+def make_image(B, tex, cache, pfmt=None):
+    if tex in cache:
+        return cache[tex]
+    rgba = tex.rgba
+    img = _image_level(B, tex, rgba, tex.name)
+    levels = []
+    if getattr(B, "generate_mipmaps", False):
+        stem, sep, ext = tex.name.rpartition(".")
+        while max(rgba.shape[:2]) > 1:
+            rgba = _halve_pixels(rgba, tex.no_swap and tex.kind == "dxt5")
+            name = f"{stem or tex.name}-{len(levels) + 1}{sep}{ext if sep else ''}"
+            levels.append(_image_level(B, tex, rgba, name))
+    fields = {12: img, 16: B.objlist("igImageMipMapList", levels)}
+    if levels:
+        fields.update({5: 5, 6: 5, 15: 1 + len(levels)})
+    ta = B.obj("igTextureAttr", fields)
+    cache[tex] = (img, ta)
+    return cache[tex]
+
+
+def material_attrs(B, mat, cache, images, *, skinned=False):
     """igAttr list for one MarvelStandart material, in the shader's attribute order."""
     attrs = []
+    for (unit, kind), values in getattr(mat, "stage_attrs", {}).items():
+        if kind == "coord":
+            attrs.append(B.obj("igTextureCoordSourceAttr", {2:unit, 4:values[0], 5:values[1], 6:unit}))
+        else:
+            fields = dict(zip((4,6,7,8,9,10), values))
+            attrs.append(B.obj("igTextureFunctionAttr", {2:unit, 5:unit, **fields}))
+    vertex_blend = getattr(mat, "vertex_blend", None)
+    if vertex_blend is not None and not skinned:
+        attrs.append(B.obj("igVertexBlendStateAttr", {4:int(vertex_blend)}))
     depth = getattr(mat,"depth_write",None)
     if depth is not None:
         attr = B.obj("igDepthWriteStateAttr")
@@ -301,6 +354,9 @@ def material_attrs(B, mat, cache, images):
     for i, v in enumerate((mat.diffuse, mat.ambient, mat.emission, mat.specular)):
         B.set_kind(m, "Vec4f", tuple(float(x) for x in v), i)
     attrs.append(m)
+    mode = getattr(mat, "material_mode", None)
+    if mode is not None:
+        attrs.append(B.obj("igMaterialModeAttr", {4: mode}))
     if mat.blend:
         src, dst = {1: (4, 5), 2: (4, 1), 3: (1, 5)}[mat.blend]
         bf = B.obj("igBlendFunctionAttr")
@@ -338,14 +394,29 @@ def material_attrs(B, mat, cache, images):
             bind(unit, make_image(B, tex, cache)[1])
             images.append(tex)
     if mat.reflection_faces:
-        faces = [make_image(B, t, cache) for t in mat.reflection_faces]
-        sphere = make_image(B, _sphere_from_faces(mat.reflection_faces), cache)
-        cube = B.obj("igTextureCubeAttr", {12: sphere[0], 16: B.objlist("igImageMipMapList", []),
-                                           19: [faces[i][0] for i in (1,0,3,2,5,4)], 20: 1})
+        # Vanilla stores six full-size face images and one mip chain on the cube.
+        if getattr(B, "generate_mipmaps", False):
+            faces = [_image_level(B, tex, tex.rgba, tex.name) for tex in mat.reflection_faces]
+        else:
+            faces = [make_image(B, tex, cache)[0] for tex in mat.reflection_faces]
+        fallback = getattr(mat, "cube_fallback", None) or _sphere_from_faces(mat.reflection_faces)
+        sphere = make_image(B, fallback, cache)
+        cube = B.obj("igTextureCubeAttr", {12: sphere[0], 16: sphere[1].get(16),
+                                           19: [faces[i] for i in (1,0,3,2,5,4)], 20: 1})
+        if getattr(B, "generate_mipmaps", False):
+            for field in (5, 6, 15):
+                cube.fields[field] = sphere[1].get(field)
+        if getattr(mat, "cube_apply", -1) >= 0:
+            cube.fields[20] = mat.cube_apply
         bind(3, cube)
     if mat.reflection_sphere is not None:
         sphere = make_image(B, mat.reflection_sphere, cache)
-        cube = B.obj("igTextureCubeAttr", {12: sphere[0], 16: B.objlist("igImageMipMapList", []), 19: [None]*6, 20: 2})
+        cube = B.obj("igTextureCubeAttr", {12: sphere[0], 16: sphere[1].get(16), 19: [None]*6, 20: 2})
+        if getattr(B, "generate_mipmaps", False):
+            for field in (5, 6, 15):
+                cube.fields[field] = sphere[1].get(field)
+        if getattr(mat, "cube_apply", -1) >= 0:
+            cube.fields[20] = mat.cube_apply
         bind(3, cube)
     if mat.reflection_mask is not None:
         bind(4, make_image(B, mat.reflection_mask, cache)[1])
@@ -353,9 +424,10 @@ def material_attrs(B, mat, cache, images):
     if mat.emissive_tex is not None:
         bind(5, make_image(B, mat.emissive_tex, cache)[1])
         images.append(mat.emissive_tex)
-    if getattr(B, "generate_global_color", True):
+    global_color = getattr(mat, "global_color", None)
+    if global_color is not None:
         gcs = B.obj("igGlobalColorStateAttr")
-        B.set_kind(gcs, "Bool", 1)
+        B.set_kind(gcs, "Bool", int(global_color is not False))
         attrs.append(gcs)
     return attrs
 
@@ -429,7 +501,7 @@ def build_skin_file(path, skin, swap_rb=False):
     Colours are written as they are in the images unless swap_rb is set."""
     B = Builder()
     B.swap_rb = swap_rb
-    B.generate_global_color = getattr(skin, "generate_global_color", True)
+    B.generate_mipmaps = getattr(skin, "generate_mipmaps", False)
     bones = skin.bones
     N = len(bones)
     # ---- skeleton -----------------------------------------------------------
@@ -503,7 +575,7 @@ def build_skin_file(path, skin, swap_rb=False):
         if getattr(mesh, "use_material", True):
             m_attrs = attr_cache.get(id(mesh.mat))
             if m_attrs is None:
-                m_attrs = attr_cache[id(mesh.mat)] = material_attrs(B, mesh.mat, cache, images)
+                m_attrs = attr_cache[id(mesh.mat)] = material_attrs(B, mesh.mat, cache, images, skinned=True)
         else:
             m_attrs = []
         obj_attrs = []
@@ -518,9 +590,9 @@ def build_skin_file(path, skin, swap_rb=False):
         vbs = B.obj("igVertexBlendStateAttr")
         B.set_kind(vbs, "Bool", 1)
         gcs = None
-        if B.generate_global_color:
+        if getattr(mesh.mat, "global_color", None) is not None:
             gcs = B.obj("igGlobalColorStateAttr")
-            B.set_kind(gcs, "Bool", 1)
+            B.set_kind(gcs, "Bool", int(getattr(mesh.mat, "global_color", None) is not False))
         inner = []
         for pal, tris in pieces:
             f = mesh.faces[tris].reshape(-1)                       # non-indexed: 3 corners per triangle
@@ -539,7 +611,7 @@ def build_skin_file(path, skin, swap_rb=False):
                                                 8: B.objlist("igAttrList", []), 10: pal_list})
             inner.append(bms)
         obj_set = B.obj("igAttrSet", {2: mesh.name, 3: None, 5: 0, 7: B.objlist("igNodeList", inner),
-                                      8: B.objlist("igAttrList", obj_attrs + [vbs] + ([gcs] if B.generate_global_color else []))})
+                                      8: B.objlist("igAttrList", obj_attrs + [vbs] + ([gcs] if gcs is not None else []))})
         child = uv_transform_node(B, mesh.mat, obj_set) if mesh.mat.uv_anim is not None else obj_set
         mat_set = B.obj("igAttrSet", {2: mesh.mat.name, 3: None, 5: 0, 7: B.objlist("igNodeList", [child]),
                                       8: B.objlist("igAttrList", m_attrs)})
@@ -588,7 +660,7 @@ def build_skin_file(path, skin, swap_rb=False):
                                      7: B.objlist("igNodeList", [actor] + hashed + helper_nodes(B, skin)), 8: B.objlist("igAttrList", []), 9: 0})
     tex_attrs = [v[1] for v in cache.values() if v[1].meta.name == "igTextureAttr"]
     scene = B.obj("igSceneInfo", {2: "Scene Graph", 4: 1, 5: scene_root, 6: B.objlist("igTextureList", tex_attrs),
-                                  7: B.objlist("igGraphPathList", []), 8: 0, 9: 0, 10: (0.0, 0.0, 1.0),
+                                  7: B.objlist("igGraphPathList", []), 8: 0, 9: getattr(B, "uv_duration", 0), 10: (0.0, 0.0, 1.0),
                                   11: B.objlist("igNodeList", [])})
     info = B.objlist("igInfoList", [actor_info, db, scene])
     B.finish(path, info)
@@ -617,7 +689,9 @@ def build_anim_file(path, anim, bones, skeleton_name=None, fmt="SEQUENCE"):
     fmt "ENBAYA":   compressed like the game's own files (Enbaya streams, plain keyframes for Motion).
     The igAnimation and database use the Blender Action name."""
     from . import enbaya_enc
-    if fmt == "ENBAYA":
+    original = anim
+    compressed = fmt in ("ENBAYA", "POST_ENBAYA")
+    if compressed:
         # Enbaya stores an integer sample rate. Preserve the requested duration
         # instead of truncating a fractional rate in its binary header.
         duration = anim.duration
@@ -659,14 +733,13 @@ def build_anim_file(path, anim, bones, skeleton_name=None, fmt="SEQUENCE"):
     rl = rest_local(bones)
     n = anim.n
     dur_ns = int(round(anim.duration * 1e9)) + (23 if fmt == "ENBAYA" else 0)
-    times_ns = (np.minimum(np.arange(n) / float(anim.rate), anim.duration) * 1e9).astype(np.int64)
     has_trans = set()
 
-    def samples(bi):
+    def samples(bi, data=anim):
         nm = names[bi]
-        q, t = anim.tracks.get(nm, (None, None))
+        q, t = data.tracks.get(nm, (None, None))
         if q is None:
-            q = np.tile(np.array(rot_to_quat(rl[bi][0])), (n, 1))
+            q = np.tile(np.array(rot_to_quat(rl[bi][0])), (data.n, 1))
         q = np.asarray(q, np.float64)
         q = q / np.linalg.norm(q, axis=1, keepdims=True)
         for k in range(1, len(q)):                       # keep the quaternion hemisphere continuous
@@ -675,9 +748,11 @@ def build_anim_file(path, anim, bones, skeleton_name=None, fmt="SEQUENCE"):
         return q, (None if t is None else np.asarray(t, np.float64))
 
     def sequence(bi):
-        q, t = samples(bi)
+        data = original if fmt == "POST_ENBAYA" else anim
+        q, t = samples(bi, data)
+        key_times = (np.minimum(np.arange(data.n) / float(data.rate), data.duration) * 1e9).astype(np.int64)
         f = {3: B.numlist("igQuaternionfList", q.astype(np.float32), "<f4"), 8: PLAY_MODE[anim.playback_type],
-             11: B.numlist("igLongList", times_ns, "<i8"), 15: 3 if t is not None else 2, 18: dur_ns}
+             11: B.numlist("igLongList", key_times, "<i8"), 15: 3 if t is not None else 2, 18: dur_ns}
         if t is not None:
             f[2] = B.numlist("igVec3fList", t.astype(np.float32), "<f4")
         if names[bi] in anim.scales:
@@ -689,7 +764,7 @@ def build_anim_file(path, anim, bones, skeleton_name=None, fmt="SEQUENCE"):
     if fmt == "ENBAYA" and anim.scales:
         raise ValueError("Enbaya cannot preserve scale tracks; choose Raw keyframes")
     src = None
-    if fmt == "ENBAYA":
+    if compressed:
         S = np.zeros((T, n, 7))
         S[:, :, 3] = 1.0
         for ti, bi in enumerate(order):
@@ -704,7 +779,7 @@ def build_anim_file(path, anim, bones, skeleton_name=None, fmt="SEQUENCE"):
     tracks = []
     for ti, bi in enumerate(order):
         nm = names[bi]
-        if fmt == "ENBAYA" and nm != "Motion":
+        if compressed and nm != "Motion" and nm not in anim.scales:
             source = B.obj("igEnbayaTransformSource", {2: ti, 3: src})
             if anim.tracks.get(nm, (None, None))[1] is not None:
                 has_trans.add(ti)
@@ -760,6 +835,7 @@ def build_static_file(path, model, swap_rb=False):
     """Static (non-skinned) model: scene info -> attr-set -> geometry, like the MUA prop files."""
     B = Builder()
     B.swap_rb = swap_rb
+    B.generate_mipmaps = getattr(model, "generate_mipmaps", False)
     images, cache, attr_cache = [], {}, {}
     mat_sets, all_pos = [], []
     by_mat = {}

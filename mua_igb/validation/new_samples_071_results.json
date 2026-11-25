@@ -1,0 +1,13 @@
+{
+  "status": "PASS",
+  "checks": [
+    "New PSP environment model import/export with skin-derived names and preserved sphere map",
+    "ActorRoot naming",
+    "No empty image texture nodes",
+    "Six vanilla cube direction slots populated",
+    "Raw and Enbaya Bip01 translation mask enabled",
+    "Attack_light3 Bip01 raw curve maximum error below 0.000003 file units",
+    "Attack_light3 Motion velocity and offset match vanilla exactly",
+    "Fresh horizontal root extraction preserves vertical bounce"
+  ]
+}

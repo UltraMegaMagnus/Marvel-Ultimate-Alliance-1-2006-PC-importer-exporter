@@ -214,7 +214,9 @@ class IGB:
         else:
             index = list(range(self.entry_count))
         self.info_index = None
-        if flags & FLAG_INFO:
+        # v4 sets this flag but has no separate info-index word; the
+        # first object begins immediately after its directory.
+        if flags & FLAG_INFO and self.version >= 5:
             self.info_index = self._u32(p)
             p += 4
         # build object table

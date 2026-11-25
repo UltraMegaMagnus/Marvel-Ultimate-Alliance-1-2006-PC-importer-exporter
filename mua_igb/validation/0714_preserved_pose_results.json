@@ -1,0 +1,20 @@
+{
+  "original_scene_unchanged": true,
+  "position_error": 4.291534423828125e-06,
+  "weight_error": 1.7881392916363497e-07,
+  "clips": {
+    "attack_light3 vanilla.igb": {
+      "maximum_vertex_error": 5.8887364251439484e-05,
+      "rms": 1.535797095364993e-05
+    },
+    "idle.igb": {
+      "maximum_vertex_error": 5.793456936213884e-05,
+      "rms": 1.587399843540547e-05
+    },
+    "anim custom max export.igb": {
+      "maximum_vertex_error": 5.563025570938068e-05,
+      "rms": 1.0902916766180011e-05
+    }
+  },
+  "release_0712_unchanged": "192bddaa091625378617ce15304dc0e8ab040922e1e9e5268b93e80e85b675f4"
+}

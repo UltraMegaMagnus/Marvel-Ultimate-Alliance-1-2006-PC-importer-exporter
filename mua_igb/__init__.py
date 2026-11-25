@@ -1,7 +1,7 @@
 bl_info = {
     "name": "MUA1 IGB Importer / Exporter (model + animation)",
     "author": "generated for MUA1 modding",
-    "version": (0, 7, 20),
+    "version": (0, 7, 28),
     "blender": (4, 2, 0),
     "location": "File > Import/Export > MUA1 ...; sidebar (N) > Alchemy",
     "description": "Alchemy model and animation tools for MUA1 PC, with XML/XML2, PSP, Wii, prototype and additional Alchemy game import",
@@ -68,7 +68,7 @@ if bpy is not None:
         bl_options = {"REGISTER", "UNDO"}
         filename_ext = ".igb"
         filter_glob: StringProperty(default="*.igb", options={"HIDDEN"})
-        skeleton_support: EnumProperty(name="Skeleton support", default="ALL", items=[("ALL", "Support for all skeletons", "Fit joint offsets to the Actors bind convention while preserving original pelvis/root animation"), ("VANILLA", "Support for Vanilla skeleton", "Keep source translations")])
+        skeleton_support: EnumProperty(name="Skeleton support", default="VANILLA", items=[("ALL", "Support for all skeletons", "Remove all translations, useful for posing custom rig"), ("VANILLA", "Support for Vanilla skeleton", "Keep source translations")])
         trans_mode: EnumProperty(
             name="Bone translation", default="ROOT", options={"HIDDEN"},
             items=[("ROOT", "Root only", "Bip01 / Motion / Footsteps: keeps bone lengths of the target model"),
@@ -83,14 +83,19 @@ if bpy is not None:
                         "skeleton length is applied, so the animation works on any skeleton. Off: translations "
                         "follow 'Bone translation' and are scaled to the target skeleton's bone lengths")
 
+        def draw(self, context):
+            self.layout.prop(self, "skeleton_support")
+            row = self.layout.row()
+            row.prop(self, "transfer_motion")
+
         def execute(self, context):
             arm = context.object if context.object and context.object.type == "ARMATURE" else None
             if arm is None:
                 arm = next((o for o in context.selected_objects if o.type == "ARMATURE"), None)
             msgs = []
             try:
-                acts = blender_io.import_animations(self.filepath, arm, "ALL" if self.skeleton_support == "VANILLA" else "ROOT", self.transfer_motion,
-                                                    self.skeleton_support == "ALL", False, msgs.append)
+                acts = blender_io.import_animations(self.filepath, arm, "ALL" if self.skeleton_support == "VANILLA" else "NONE", self.transfer_motion,
+                                                    False, False, msgs.append)
             except Exception as e:
                 import traceback
                 traceback.print_exc()
@@ -123,8 +128,12 @@ if bpy is not None:
         filename_ext = ".igb"
         filter_glob: StringProperty(default="*.igb", options={"HIDDEN"})
         mode: EnumProperty(name="Type", default="SKIN", items=[("SKIN", "Actor", "Character with a skeleton"), ("STATIC", "Model", "Export model geometry"), ("MANNEQUIN", "Mannequin", "Actor-free animated mannequin")])
+        export_animation: BoolProperty(name="Export Animation",
+            get=lambda self: self.get("animation_" + self.mode, self.mode != "SKIN"),
+            set=lambda self, value: self.__setitem__("animation_" + self.mode, bool(value)),
+            description="Embed the active armature action. Actor material UV animation is exported independently")
+        generate_mipmaps: BoolProperty(name="Generate mipmaps", default=False)
         generate_hull: BoolProperty(name="Generate igCollideHull", default=False)
-        generate_global_color: BoolProperty(name="Generate Global Color", default=True)
         selected_only: BoolProperty(name="Selected meshes only", default=False, options={"HIDDEN"},
                                     description="If meshes are selected export only those, otherwise every visible mesh")
         auto_scale: BoolProperty(name="Use the armature's import scale", default=True)
@@ -138,7 +147,7 @@ if bpy is not None:
         swap_rb: BoolProperty(name="Swap color", default=False,
                               description="Off: textures are written exactly as they are in Blender. On: red and blue are "
                                           "exchanged on every texture except normal maps, regardless of the import setting")
-        anim_workaround: BoolProperty(name="Anim workaround", default=True, description="Bake skeletal animation to actor-free joint/mesh deformation. Off exports a static pose at Static frame; UV animation remains independent")
+        anim_workaround: BoolProperty(name="Animation workaround", default=True, description="Bake skeletal animation to actor-free joint/mesh deformation. Off exports a static pose at Static frame; UV animation remains independent")
 
         def draw(self, context):
             lay = self.layout
@@ -146,10 +155,9 @@ if bpy is not None:
             box.prop(self, "mode")
             box = lay.box()
             box.prop(self, "swap_rb")
+            box.prop(self, "generate_mipmaps")
             if self.mode in ("STATIC","MANNEQUIN"):
                 box.prop(self, "generate_hull")
-            if self.mode == "SKIN":
-                box.prop(self, "generate_global_color")
             if self.mode == "MANNEQUIN":
                 box.prop(self,"anim_workaround")
             box = lay.box()
@@ -185,7 +193,8 @@ if bpy is not None:
             name="Standard bone axes", default=False,
             description="Convert rotations of bones with non-standard axes back to the game's axes")
         extract_motion: BoolProperty(name="Extract Motion", default=False, description="Move unextracted horizontal Bip01 travel to Motion and write Raven motion velocity")
-        remove_pos: BoolProperty(name="RemovePos", default=False)
+        post_compress: BoolProperty(name="Compressed (Enbaya) Post Export", default=True, description="Compress after RemovePos. Motion and tracks requiring scale keys keep their raw keys")
+        remove_pos: BoolProperty(name="RemovePos", default=True)
         track_format: EnumProperty(
             name="Track format", default="SEQUENCE",
             items=[("SEQUENCE", "Raw keyframes (for the Alchemy optimizers)",
@@ -199,6 +208,9 @@ if bpy is not None:
             box = lay.box()
             box.prop(self, "track_format")
             box.prop(self, "remove_pos")
+            row = box.row()
+            row.enabled = self.remove_pos and self.track_format == "SEQUENCE"
+            row.prop(self, "post_compress")
             box.prop(self, "extract_motion")
             box.prop(self, "sample_rate")
             box = lay.box()

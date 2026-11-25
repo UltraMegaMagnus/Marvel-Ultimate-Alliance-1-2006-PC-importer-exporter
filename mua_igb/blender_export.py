@@ -118,6 +118,8 @@ class Collector:
             if role == "normal":
                 arr = normal_to_dxt5nm(arr, self.o.flip_green)
             name = os.path.splitext(os.path.basename(img.filepath or img.name))[0] or img.name
+            if role == "stage-opacity":
+                name += ".OPC"
             self.tex_cache[key] = XTex("textures\\%s.dds" % name, arr, kind, no_swap=(role == "normal"))
         return self.tex_cache[key]
 
@@ -128,12 +130,27 @@ class Collector:
             return self.mat_cache[mat.name]
         xm = XMat(mat.name)
         p = mat.mua
+        xm.global_color = p.global_color_enabled if p.global_color_present else None
         if p.active:
             xm.alpha_test, xm.alpha_func, xm.alpha_ref = p.alpha_test, int(p.alpha_func), p.alpha_ref
             depth = mat.original.mua
+            if depth.material_mode_present:
+                xm.material_mode = depth.material_mode_value if depth.material_mode == "CUSTOM" else int(depth.material_mode)
             xm.depth_write = bool(int(depth.depth_write)) if depth.depth_write_present else None
             xm.texture_matrix_enabled = p.texture_matrix
             xm.texture_matrix_present = p.texture_matrix_present
+            xm.stage_attrs = {}
+            for stage in depth.texture_stages:
+                for kind, fields in (("coord", ("coord_mode", "coord_index")),
+                                     ("function", ("mode","arg0","arg1","stage_type","call_state","function_type"))):
+                    if getattr(stage, kind):
+                        key = (stage.unit, kind)
+                        if key in xm.stage_attrs:
+                            raise ValueError(f"{mat.name}: duplicate {kind} attribute on unit {stage.unit}")
+                        xm.stage_attrs[key] = tuple(getattr(stage, field) for field in fields)
+            xm.cube_apply = depth.cube_apply
+            xm.vertex_blend = depth.vertex_blend_enabled if depth.vertex_blend_present else None
+            xm.global_color = depth.global_color_enabled if depth.global_color_present else None
             xm.shader_parameters_enabled = p.shader_parameters
             xm.blend = int(p.blend_type)
             xm.lighting = bool(p.lighting)
@@ -142,7 +159,11 @@ class Collector:
             xm.specular, xm.emission = tuple(p.specular), tuple(p.emission)
             xm.reflectance, xm.transparent = tuple(p.reflectance), bool(p.transparent)
             xm.diffuse_tex = self.tex(p.diffuse_tex, "dxt5" if xm.blend or p.alpha_test else "dxt1")
-            xm.normal_tex = self.tex(p.normal_tex, "dxt5", "normal")
+            if p.stage1_image:
+                role = "stage-opacity" if p.stage1_image.get("mua_opacity_stage") else "stage-color"
+                xm.normal_tex = self.tex(p.stage1_image, "dxt5", role)
+            else:
+                xm.normal_tex = self.tex(p.normal_tex, "dxt5", "normal")
             xm.specular_tex = self.tex(p.specular_tex, "dxt1")
             xm.emissive_tex = self.tex(p.emissive_tex, "dxt1")
             xm.reflection_mask = self.tex(p.reflection_mask, "dxt1")
@@ -151,16 +172,19 @@ class Collector:
                 xm.reflection_sphere = self.tex(p.reflection_all, "rgba8")
             elif any(not _is_ph(f) for f in faces):
                 xs = []
+                sizes = {tuple(f.size) for f in faces if not _is_ph(f)}
+                side = next(iter(sizes))[0] if len(sizes) == 1 and all(w == h for w, h in sizes) else 128
                 for f in faces:
                     if _is_ph(f):
-                        xs.append(XTex("env.png", np.zeros((128, 128, 4), np.float32), "rgba8"))
+                        xs.append(XTex("env.png", np.zeros((side, side, 4), np.float32), "rgba8"))
                     else:
-                        key = (id(f), "rgba8", "face")
+                        key = (id(f), "rgba8", "face", side)
                         if key not in self.tex_cache:
                             self.tex_cache[key] = XTex(os.path.basename(f.filepath or f.name) or "env.png",
-                                                       _resize(bio.image_array(f), 128), "rgba8")
+                                                       _resize(bio.image_array(f), side), "rgba8")
                         xs.append(self.tex_cache[key])
                 xm.reflection_faces = xs
+                xm.cube_fallback = self.tex(p.cube_fallback, "rgba8")
         else:                                     # foreign material: first image feeding Base Color / any image
             node = None
             if mat.use_nodes and mat.node_tree:
@@ -176,6 +200,7 @@ class Collector:
     def _default_material(self):
         if "__default__" not in self.mat_cache:
             self.mat_cache["__default__"] = XMat("default")
+            self.mat_cache["__default__"].global_color = self.o.mode == "SKIN" or None
         return self.mat_cache["__default__"]
 
     def uv_anim(self, mat):
@@ -309,7 +334,7 @@ def _collect_object(obj, col, scale, bone_index=None, root_bone=0):
         if flip:
             faces = faces[:, [0, 2, 1]]
         mat = obj.material_slots[mi].material if mi < len(obj.material_slots) else None
-        xm = col.material(mat, col.o.export_animation)
+        xm = col.material(mat, col.o.export_animation or col.o.mode == "SKIN")
         export_name = obj.get("mua_source_name", obj.name) if obj.name == obj.get("mua_import_object_name") else obj.name
         xmesh = XMesh(export_name, xm, pos[v][first].astype(np.float32), nrm[loops][first].astype(np.float32),
                       uv[loops][first].astype(np.float32), faces,
@@ -357,6 +382,7 @@ def export_model(context, path, o):
         if embedded and (o.mode != "MANNEQUIN" or o.anim_workaround):
             from .embedded_export import collect
             model = collect(context, arm_obj, objs, col, scale, o, name)
+            model.generate_mipmaps = getattr(o, "generate_mipmaps", False)
             model.helpers = helpers
             model.generate_hull = getattr(o, "generate_hull", False)
             if o.mode == "MANNEQUIN" and isinstance(model, XSkin):
@@ -369,8 +395,8 @@ def export_model(context, path, o):
             infos, bone_index = collect_bones(arm_obj, scale, o.normalize_frames)
             root = bone_index.get("Bip01", 0)
             skin = XSkin(name)
+            skin.generate_mipmaps = getattr(o, "generate_mipmaps", False)
             skin.helpers = helpers
-            skin.generate_global_color = getattr(o, "generate_global_color", True)
             skin.bones = xbones(infos, scale)
             for ob in objs:
                 skin.meshes += collect_object(ob, col, scale, bone_index, root)
@@ -389,6 +415,7 @@ def export_model(context, path, o):
             kind = "skin"
         else:
             st = XStatic(name)
+            st.generate_mipmaps = getattr(o, "generate_mipmaps", False)
             st.helpers = helpers
             st.generate_hull = getattr(o, "generate_hull", False)
             for ob in objs:
@@ -520,5 +547,8 @@ def export_action(context, path, o):
     if getattr(o,"remove_pos",False):
         from .remove_pos import apply
         apply(anim)
-    info = build_anim_file(path, anim, bones, stem, o.track_format)
+    fmt = o.track_format
+    if fmt == "SEQUENCE" and o.remove_pos and getattr(o, "post_compress", False):
+        fmt = "POST_ENBAYA"
+    info = build_anim_file(path, anim, bones, stem, fmt)
     return info, action.name

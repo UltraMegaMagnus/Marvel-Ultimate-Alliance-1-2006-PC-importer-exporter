@@ -1,0 +1,342 @@
+[
+  {
+    "skin": "skin vanilla with env.igb",
+    "action": "attack_knockback1",
+    "error": 1.6801880846628592e-06
+  },
+  {
+    "skin": "skin vanilla with env.igb",
+    "action": "power_5",
+    "error": 1.4745621683687204e-06
+  },
+  {
+    "skin": "skin vanilla with env.igb",
+    "action": "power_1_start",
+    "error": 1.6295999785143067e-06
+  },
+  {
+    "skin": "skin vanilla with env.igb",
+    "action": "power_2",
+    "error": 4.265299779149245e-06
+  },
+  {
+    "skin": "skin vanilla with env.igb",
+    "action": "power_16",
+    "error": 4.3634534563352645e-06
+  },
+  {
+    "skin": "skin vanilla with env.igb",
+    "action": "power_1_loop",
+    "error": 1.0407016048930018e-06
+  },
+  {
+    "skin": "skin vanilla with env.igb",
+    "action": "attack_light2",
+    "error": 1.1517429854279726e-06
+  },
+  {
+    "skin": "skin vanilla with env.igb",
+    "action": "attack_knockback2",
+    "error": 1.3790955790682347e-06
+  },
+  {
+    "skin": "skin vanilla with env.igb",
+    "action": "power_17",
+    "error": 1.5431884662575612e-05
+  },
+  {
+    "skin": "skin vanilla with env.igb",
+    "action": "power_18",
+    "error": 1.7695169844955672e-06
+  },
+  {
+    "skin": "skin vanilla with env.igb",
+    "action": "power_15",
+    "error": 3.7180543159820445e-06
+  },
+  {
+    "skin": "skin vanilla with env.igb",
+    "action": "power_11",
+    "error": 1.3755435048778963e-06
+  },
+  {
+    "skin": "skin vanilla with env.igb",
+    "action": "attack_light1",
+    "error": 1.8796317249325512e-06
+  },
+  {
+    "skin": "skin vanilla with env.igb",
+    "action": "attack_heavy1",
+    "error": 1.8055091857149819e-06
+  },
+  {
+    "skin": "skin vanilla with env.igb",
+    "action": "pain_blocking",
+    "error": 9.576622836959814e-07
+  },
+  {
+    "skin": "skin vanilla with env.igb",
+    "action": "attack_light3",
+    "error": 1.6623531564619043e-06
+  },
+  {
+    "skin": "skin vanilla with env.igb",
+    "action": "power_10",
+    "error": 1.5049162215063916e-05
+  },
+  {
+    "skin": "skin vanilla with env.igb",
+    "action": "attack_popup1",
+    "error": 4.09143790136568e-06
+  },
+  {
+    "skin": "skin vanilla with env.igb",
+    "action": "power_8_loop",
+    "error": 1.7283622355535044e-06
+  },
+  {
+    "skin": "skin vanilla with env.igb",
+    "action": "power_8_start",
+    "error": 2.0484284348754045e-06
+  },
+  {
+    "skin": "skin vanilla with env.igb",
+    "action": "power_8",
+    "error": 1.739917038889871e-06
+  },
+  {
+    "skin": "skin vanilla with env.igb",
+    "action": "blocking",
+    "error": 1.8064572770981613e-06
+  },
+  {
+    "skin": "skin vanilla with env.igb",
+    "action": "power_19",
+    "error": 1.629576857453685e-06
+  },
+  {
+    "skin": "skin vanilla with env.igb",
+    "action": "power_4",
+    "error": 1.2085234573078196e-06
+  },
+  {
+    "skin": "skin vanilla with env.igb",
+    "action": "power_4_loop",
+    "error": 1.5205936705342538e-06
+  },
+  {
+    "skin": "skin vanilla with env.igb",
+    "action": "power_3",
+    "error": 1.852365414833912e-06
+  },
+  {
+    "skin": "skin vanilla with env.igb",
+    "action": "power_5_end",
+    "error": 1.6937734734767673e-06
+  },
+  {
+    "skin": "skin vanilla with env.igb",
+    "action": "power_6",
+    "error": 2.0115954093569144e-06
+  },
+  {
+    "skin": "skin vanilla with env.igb",
+    "action": "power_7",
+    "error": 1.2185809410425463e-06
+  },
+  {
+    "skin": "skin vanilla with env.igb",
+    "action": "power_4_end",
+    "error": 1.6210902344937494e-06
+  },
+  {
+    "skin": "skin vanilla with env.igb",
+    "action": "power_2_loop",
+    "error": 1.0824600735759304e-06
+  },
+  {
+    "skin": "skin vanilla with env.igb",
+    "action": "power_1_end",
+    "error": 1.727088658753928e-06
+  },
+  {
+    "skin": "skin vanilla with env.igb",
+    "action": "power_9",
+    "error": 8.965494942003716e-06
+  },
+  {
+    "skin": "skin vanilla with env.igb",
+    "action": "jumpdouble_start",
+    "error": 1.0356836668279357e-06
+  },
+  {
+    "skin": "customrigwasted.igb",
+    "action": "attack_knockback1.001",
+    "error": 2.511882122746556e-06
+  },
+  {
+    "skin": "customrigwasted.igb",
+    "action": "power_5.001",
+    "error": 3.2176511695070076e-06
+  },
+  {
+    "skin": "customrigwasted.igb",
+    "action": "power_1_start.001",
+    "error": 2.2647062465352974e-06
+  },
+  {
+    "skin": "customrigwasted.igb",
+    "action": "power_2.001",
+    "error": 3.821462346564886e-06
+  },
+  {
+    "skin": "customrigwasted.igb",
+    "action": "power_16.001",
+    "error": 4.085812221887863e-06
+  },
+  {
+    "skin": "customrigwasted.igb",
+    "action": "power_1_loop.001",
+    "error": 4.06020471643842e-06
+  },
+  {
+    "skin": "customrigwasted.igb",
+    "action": "attack_light2.001",
+    "error": 2.8794505837481665e-06
+  },
+  {
+    "skin": "customrigwasted.igb",
+    "action": "attack_knockback2.001",
+    "error": 2.561586711635755e-06
+  },
+  {
+    "skin": "customrigwasted.igb",
+    "action": "power_17.001",
+    "error": 1.5035239300686953e-05
+  },
+  {
+    "skin": "customrigwasted.igb",
+    "action": "power_18.001",
+    "error": 2.9134844155009887e-06
+  },
+  {
+    "skin": "customrigwasted.igb",
+    "action": "power_15.001",
+    "error": 3.784473847190384e-06
+  },
+  {
+    "skin": "customrigwasted.igb",
+    "action": "power_11.001",
+    "error": 1.5740365171268422e-06
+  },
+  {
+    "skin": "customrigwasted.igb",
+    "action": "attack_light1.001",
+    "error": 3.4615987019037675e-06
+  },
+  {
+    "skin": "customrigwasted.igb",
+    "action": "attack_heavy1.001",
+    "error": 2.34101227647443e-06
+  },
+  {
+    "skin": "customrigwasted.igb",
+    "action": "pain_blocking.001",
+    "error": 2.212481145846823e-06
+  },
+  {
+    "skin": "customrigwasted.igb",
+    "action": "attack_light3.001",
+    "error": 3.985161523445413e-06
+  },
+  {
+    "skin": "customrigwasted.igb",
+    "action": "power_10.001",
+    "error": 1.4269019317225684e-05
+  },
+  {
+    "skin": "customrigwasted.igb",
+    "action": "attack_popup1.001",
+    "error": 4.8404722434725045e-06
+  },
+  {
+    "skin": "customrigwasted.igb",
+    "action": "power_8_loop.001",
+    "error": 1.514816407421904e-06
+  },
+  {
+    "skin": "customrigwasted.igb",
+    "action": "power_8_start.001",
+    "error": 2.209314736489887e-06
+  },
+  {
+    "skin": "customrigwasted.igb",
+    "action": "power_8.001",
+    "error": 3.4402216613216297e-06
+  },
+  {
+    "skin": "customrigwasted.igb",
+    "action": "blocking.001",
+    "error": 5.250654115940279e-06
+  },
+  {
+    "skin": "customrigwasted.igb",
+    "action": "power_19.001",
+    "error": 3.3766476903451803e-06
+  },
+  {
+    "skin": "customrigwasted.igb",
+    "action": "power_4.001",
+    "error": 2.314411169379582e-06
+  },
+  {
+    "skin": "customrigwasted.igb",
+    "action": "power_4_loop.001",
+    "error": 1.9217270832427857e-06
+  },
+  {
+    "skin": "customrigwasted.igb",
+    "action": "power_3.001",
+    "error": 3.069187940241136e-06
+  },
+  {
+    "skin": "customrigwasted.igb",
+    "action": "power_5_end.001",
+    "error": 2.7721604212160855e-06
+  },
+  {
+    "skin": "customrigwasted.igb",
+    "action": "power_6.001",
+    "error": 3.825181167371738e-06
+  },
+  {
+    "skin": "customrigwasted.igb",
+    "action": "power_7.001",
+    "error": 3.6630056499120656e-06
+  },
+  {
+    "skin": "customrigwasted.igb",
+    "action": "power_4_end.001",
+    "error": 3.4513541855574204e-06
+  },
+  {
+    "skin": "customrigwasted.igb",
+    "action": "power_2_loop.001",
+    "error": 1.810480647179702e-06
+  },
+  {
+    "skin": "customrigwasted.igb",
+    "action": "power_1_end.001",
+    "error": 2.256992623017595e-06
+  },
+  {
+    "skin": "customrigwasted.igb",
+    "action": "power_9.001",
+    "error": 9.58523006033829e-06
+  },
+  {
+    "skin": "customrigwasted.igb",
+    "action": "jumpdouble_start.001",
+    "error": 2.288781949744134e-06
+  }
+]
