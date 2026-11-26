@@ -71,10 +71,11 @@ The original `igb-blender` project builds upon research and code from:
 - **IGBConverter** — nikita488 (MIT)
 - **IGBDataExtractor** — ChmtTnky
 - **IGB parser gist** — mateon1
+- **korenkonder for enbaya animations**
 - **igBlender** — ak2yny (GPLv3)
 - **raven-formats** — nikita488 (MIT)
 - **Python Project**
-- t**OpenAIt**
+- **OpenAIt**
 
 ### MarvelMods Community
 
